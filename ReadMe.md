@@ -17,7 +17,7 @@ Un utilisateur peut :
 - Être ajouté à un groupe
 - Recevoir une tentative d’appel
 
-👉 Même s’il n’est pas connecté, à condition qu’il se soit déjà connecté au serveur au moins une fois.
+ Même s’il n’est pas connecté, à condition qu’il se soit déjà connecté au serveur au moins une fois.
 
 Le serveur conserve :
 - Son adresse IP
@@ -57,7 +57,7 @@ Lors de la première connexion :
 - Si le pseudo est disponible → accepté
 - Sinon → le système demande un autre pseudo
 
-👉 Une fois validé :
+  Une fois validé :
 - L’utilisateur est enregistré avec :
   - adresse IP
   - pseudo
@@ -69,7 +69,7 @@ Lors de la première connexion :
 - L’utilisateur est automatiquement reconnu via son **adresse IP**
 - Il n’a pas besoin de ressaisir son pseudo
 
-👉 À la connexion :
+  À la connexion :
 - Le serveur restaure :
   - Les messages non lus
   - Les invitations de groupe
@@ -186,7 +186,7 @@ Chaque utilisateur est défini par :
 - Si le destinataire est hors ligne :
   - Une **tentative d’appel vidéo est enregistrée**
   - Le destinataire verra à sa reconnexion une notification indiquant :
-    👉 *« X a tenté de vous appeler en vidéo »*, simulant le comportement des appels manqués des applications de messagerie modernes
+     *« X a tenté de vous appeler en vidéo »*, simulant le comportement des appels manqués des applications de messagerie modernes
 
 ---
 
