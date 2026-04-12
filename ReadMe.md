@@ -1,157 +1,250 @@
-# Cahier des charges fonctionnel - Application de messagerie instantanée
+# Cahier des charges fonctionnel - Application de messagerie instantanée (version avancée)
 
 ## 1. Vue d’ensemble
 
 L’application permet à plusieurs utilisateurs de communiquer entre eux via :
 
-- Messages texte en temps réel
+- Messages texte (temps réel et différé)
 - Appels audio (directs entre deux clients)
 - Appels vidéo (directs entre deux clients)
+- Création et gestion de groupes
 
-### 1.1 Architecture générale
+### Particularité importante
 
-- Un **serveur central** multithread gère les connexions et relaie les messages texte.
-- Les **clients** communiquent avec le serveur pour la signalisation (connexion, envoi de messages, demande d’appel).
-- Les **flux audio et vidéo** sont échangés directement entre les clients (sans passer par le serveur).
+Un utilisateur peut :
 
----
+- Recevoir des messages
+- Être ajouté à un groupe
+- Recevoir une tentative d’appel
 
-## 2. Connexion d’un utilisateur (interface utilisateur)
+👉 Même s’il n’est pas connecté, à condition qu’il se soit déjà connecté au serveur au moins une fois.
 
-### 2.1 Écran de connexion
-
-Au démarrage de l’application, l’utilisateur voit une **fenêtre de connexion** contenant :
-
-- Un champ de texte pour saisir son **pseudo** (obligatoire)
-- Un champ de texte pour saisir l’**adresse IP du serveur** (exemple : 192.168.1.45)
-- Un champ de texte pour saisir le **port du serveur** (par défaut 1234)
-- Un bouton **« Se connecter »**
-
-### 2.2 Déroulement de la connexion (côté utilisateur)
-
-1. L’utilisateur remplit les trois champs.
-2. Il clique sur **« Se connecter »**.
-3. L’application tente de joindre le serveur :
-   - Si la connexion réussit et que le pseudo est libre → la fenêtre de connexion se ferme et la **fenêtre principale** s’ouvre.
-   - Si le pseudo est déjà utilisé → un message d’erreur s’affiche : *« Pseudo déjà pris »*.
-   - Si le serveur est injoignable → un message d’erreur s’affiche : *« Impossible de joindre le serveur »*.
-
-### 2.3 Fenêtre principale (après connexion)
-
-La fenêtre principale contient :
-
-- **Colonne de gauche** : liste des utilisateurs connectés (mise à jour automatiquement)
-- **Zone centrale** : historique des messages (affichage des conversations)
-- **Champ de saisie** en bas : pour taper un message
-- **Bouton « Envoyer »** (ou touche Entrée)
-- **Boutons « Appel audio »** et **« Appel vidéo »** (actifs quand un contact est sélectionné)
-- **Bouton « Déconnexion »**
+Le serveur conserve :
+- Son adresse IP
+- Son pseudo
+- Son historique (messages, invitations, appels manqués)
 
 ---
 
-## 3. Fonctionnalités entre clients
+## 1.1 Architecture générale
 
-### 3.1 Envoi de message texte
+- Un **serveur central multithread** :
+  - Gère les connexions
+  - Associe **adresse IP ↔ pseudo**
+  - Stocke les messages hors ligne
+  - Gère les groupes
+  - Gère la signalisation des appels
 
-**Déclencheur** : L’utilisateur sélectionne un destinataire dans la liste des connectés, tape un message et clique sur « Envoyer ».
-
-**Comportement** :
-- Le message est envoyé au serveur.
-- Le serveur le relaie immédiatement au destinataire.
-- L’expéditeur voit son message apparaître dans la zone de chat.
-
-### 3.2 Réception automatique des messages
-
-**Déclencheur** : Aucune action de l’utilisateur. Le message arrive automatiquement.
-
-**Comportement** :
-- Dès qu’un message est envoyé par un autre utilisateur, il s’affiche **immédiatement** dans la zone de chat du destinataire.
-- L’utilisateur n’a pas besoin de rafraîchir ou de cliquer sur « Recevoir ».
-- Pendant la réception, l’utilisateur peut continuer à taper ou à naviguer dans l’interface (pas de blocage).
-
-### 3.3 Visualisation de la liste des connectés
-
-**Déclencheur** : Connexion réussie ou changement dans la liste (arrivée/départ d’un utilisateur).
-
-**Comportement** :
-- À la connexion, l’utilisateur voit la liste de tous les autres utilisateurs déjà connectés.
-- Quand un nouvel utilisateur se connecte, son pseudo apparaît **automatiquement** dans la liste de tous les clients connectés.
-- Quand un utilisateur se déconnecte, son pseudo disparaît **automatiquement** de toutes les listes.
-
-### 3.4 Démarrer un appel audio
-
-**Déclencheur** : L’utilisateur sélectionne un contact et clique sur « Appel audio ».
-
-**Comportement** :
-- Une demande d’appel est envoyée au destinataire via le serveur.
-- Le destinataire voit une notification : *« X vous appelle. Accepter ? Refuser ? »*
-- Si le destinataire **accepte** :
-  - Un flux audio direct s’établit entre les deux clients.
-  - Les deux utilisateurs peuvent parler en temps réel.
-- Si le destinataire **refuse** :
-  - L’appelant reçoit une notification : *« Appel refusé »*.
-
-### 3.5 Démarrer un appel vidéo
-
-**Déclencheur** : L’utilisateur sélectionne un contact et clique sur « Appel vidéo ».
-
-**Comportement** :
-- Même mécanisme que l’appel audio, mais avec transmission de la vidéo en plus.
-- Le destinataire voit : *« X demande un appel vidéo. Accepter ? Refuser ? »*
-- Si accepté :
-  - Flux audio + vidéo directs entre les deux clients.
-  - Chaque utilisateur voit l’image de l’autre (et la sienne en petit).
-
-### 3.6 Terminer un appel
-
-**Déclencheur** : L’utilisateur clique sur « Raccrocher » (bouton apparaissant pendant l’appel).
-
-**Comportement** :
-- L’audio et/ou la vidéo s’arrêtent.
-- Les deux clients retournent à l’écran de chat.
-- L’autre utilisateur est automatiquement informé de la fin d’appel.
-
-### 3.7 Déconnexion
-
-**Déclencheur** : L’utilisateur clique sur « Déconnexion » ou ferme la fenêtre.
-
-**Comportement** :
-- Le client prévient le serveur.
-- Le serveur supprime l’utilisateur de la liste des connectés.
-- Tous les autres clients voient le pseudo disparaître de leur liste.
+- Les **clients** :
+  - Communiquent avec le serveur pour :
+    - Messages
+    - Groupes
+    - Signalisation d’appel
+  - Échangent directement les flux audio/vidéo entre eux
 
 ---
 
-## 4. Résumé des fonctionnalités (version 1)
+## 2. Connexion d’un utilisateur
 
-| Fonctionnalité | Acteur | Automatique ? |
-|----------------|-----------|------------|
-| Connexion | Utilisateur | Non |
-| Déconnexion | Utilisateur | Non |
-| Envoyer un message | Utilisateur | Non |
-| Recevoir un message | Client | **Oui** |
-| Voir la liste des connectés | Utilisateur | Non (mais mise à jour automatique) |
-| Démarrer appel audio | Utilisateur | Non |
-| Démarrer appel vidéo | Utilisateur | Non |
-| Répondre à un appel | Utilisateur | Non |
-| Recevoir notification d’appel | Client | **Oui** |
-| Terminer un appel | Utilisateur | Non |
+### 2.1 Première utilisation
 
----
+Lors de la première connexion :
 
-## 5. Contraintes techniques (rappel)
+- Le serveur identifie automatiquement l’utilisateur via son **adresse IP**
+- L’utilisateur doit saisir un **pseudo**
 
-- **Messages texte** : transitent obligatoirement par le serveur (TCP)
-- **Signalisation** (connexion, appel, acceptation, refus) : transitent par le serveur (TCP)
-- **Flux audio et vidéo** : transitent directement entre clients (sans le serveur)
-- Le client doit maintenir **deux threads** :
-  - Un pour l’interface utilisateur
-  - Un pour écouter en permanence les messages entrants (automatiques)
+**Vérification :**
+- Si le pseudo est disponible → accepté
+- Sinon → le système demande un autre pseudo
+
+👉 Une fois validé :
+- L’utilisateur est enregistré avec :
+  - adresse IP
+  - pseudo
 
 ---
 
-## 6. Exigences non fonctionnelles
+### 2.2 Connexions suivantes
 
-- Temps de latence : les messages doivent s’afficher chez le destinataire en **moins d’une seconde**.
-- Stabilité : le serveur ne doit pas planter si un client se déconnecte brutalement.
-- Interface : simple et intuitive (inspirée de WhatsApp ou Messenger).
+- L’utilisateur est automatiquement reconnu via son **adresse IP**
+- Il n’a pas besoin de ressaisir son pseudo
+
+👉 À la connexion :
+- Le serveur restaure :
+  - Les messages non lus
+  - Les invitations de groupe
+  - Les appels manqués
+
+---
+
+## 3. Gestion des utilisateurs
+
+### 3.1 Identification
+
+Chaque utilisateur est défini par :
+
+- **Adresse IP (clé principale)**  
+- **Pseudo (affichage utilisateur)**  
+
+---
+
+### 3.2 Types d’utilisateurs
+
+- **Connectés**
+- **Hors ligne (connus du serveur)**
+
+---
+
+### 3.3 Affichage côté client
+
+- Liste des utilisateurs avec :
+  - 🟢 En ligne
+  - ⚫ Hors ligne
+
+---
+
+## 4. Fonctionnalités entre clients
+
+---
+
+## 4.1 Envoi de message texte
+
+**Déclencheur :** L’utilisateur sélectionne un contact ou un groupe et envoie un message.
+
+**Comportement :**
+
+- Le message est envoyé au serveur
+- Si le destinataire est connecté → réception immédiate
+- Sinon → message stocké puis livré à la reconnexion
+
+---
+
+## 4.2 Réception des messages
+
+- Réception instantanée si connecté
+- Réception différée sinon
+
+- L’affichage est automatique sans action utilisateur
+
+---
+
+## 4.3 Création de groupe
+
+**Déclencheur :** L’utilisateur clique sur « Créer groupe »
+
+**Comportement :**
+
+- Sélection des membres (connectés ou non)
+- Création du groupe côté serveur
+- Enregistrement des membres
+
+- Les utilisateurs hors ligne recevront l’invitation à leur prochaine connexion
+
+---
+
+## 4.4 Messagerie de groupe
+
+- Les messages sont envoyés au serveur
+- Distribués à tous les membres
+
+- Membres connectés → réception immédiate  
+- Membres hors ligne → stockage puis livraison ultérieure
+
+---
+
+## 4.5 Appel audio
+
+**Déclencheur :** L’utilisateur sélectionne un contact et lance un appel audio.
+
+**Comportement :**
+
+- Une demande d’appel est envoyée via le serveur
+- Si le destinataire est connecté :
+  - Une notification s’affiche avec options *Accepter / Refuser*
+  - En cas d’acceptation :
+    - Un flux audio direct est établi entre les deux clients
+- Si le destinataire est hors ligne :
+  - L’appel est enregistré comme **appel manqué**
+  - Le destinataire sera notifié à sa prochaine connexion
+
+---
+
+## 4.6 Appel vidéo
+
+**Déclencheur :** L’utilisateur sélectionne un contact et lance un appel vidéo.
+
+**Comportement :**
+
+- Une demande d’appel vidéo est envoyée via le serveur
+
+- Si le destinataire est connecté :
+  - Il reçoit une notification avec options *Accepter / Refuser*
+  - En cas d’acceptation :
+    - Un flux audio et vidéo direct est établi
+    - Les deux utilisateurs se voient en temps réel
+
+- Si le destinataire est hors ligne :
+  - Une **tentative d’appel vidéo est enregistrée**
+  - Le destinataire verra à sa reconnexion une notification indiquant :
+    👉 *« X a tenté de vous appeler en vidéo »*, simulant le comportement des appels manqués des applications de messagerie modernes
+
+---
+
+## 4.7 Liste des utilisateurs
+
+- Mise à jour automatique
+- Affichage des utilisateurs connectés et hors ligne
+
+---
+
+## 4.8 Déconnexion
+
+- L’utilisateur devient hors ligne
+- Son état est conservé côté serveur
+
+---
+
+## 5. Résumé des fonctionnalités
+
+| Fonctionnalité | Disponible |
+|----------------|----------|
+| Envoyer message | Oui |
+| Recevoir message | Oui |
+| Messages hors ligne | Oui |
+| Création groupe | Oui |
+| Messagerie groupe | Oui |
+| Appel audio | Oui |
+| Appel vidéo | Oui |
+| Notifications appels manqués | Oui |
+
+---
+
+## 6. Contraintes techniques
+
+- **Serveur (TCP)** :
+  - Messages
+  - Signalisation
+  - Groupes
+  - Stockage
+
+- **Client à client (P2P)** :
+  - Audio
+  - Vidéo
+
+- **Stockage serveur** :
+  - Messages non lus
+  - Invitations
+  - Appels manqués
+
+- **Multithreading côté client** :
+  - Interface utilisateur
+  - Réception réseau
+
+---
+
+## 7. Exigences non fonctionnelles
+
+- Latence < 1 seconde pour les messages
+- Fiabilité de livraison (même hors ligne)
+- Interface simple et intuitive
+- Tolérance aux déconnexions brutales
