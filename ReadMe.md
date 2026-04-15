@@ -26,7 +26,6 @@ Lors de la première connexion :
 
 Le serveur enregistre l’utilisateur avec :
 
-- **Adresse IP**
 - **Pseudo**
 - **Nom complet**
 - **Mot de passe (stocké de manière sécurisée)**
